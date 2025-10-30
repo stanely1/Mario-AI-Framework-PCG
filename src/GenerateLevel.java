@@ -35,7 +35,7 @@ public class GenerateLevel {
         for (int i = 0; i < numLevels; i++) {
             String level = generator.getGeneratedLevel(new MarioLevelModel(LEVEL_WIDTH, LEVEL_HEIGHT), new MarioTimer(5 * 60 * 60 * 1000));
             writeLevel(generator.getGeneratorName(), i, level);
-            System.out.println("Running level " + (i + 1) + "..." + (visuals ? "" : " (headless)"));
+            // System.out.println("Running level " + (i + 1) + "..." + (visuals ? "" : " (headless)"));
             //printLevel(level);
             MarioResult runresult = game.runGame(agent, level, TIMER, 0, visuals);
             //printResults(runresult);
@@ -83,7 +83,8 @@ public class GenerateLevel {
 //        MarioLevelGenerator generator = new levelGenerators.benWeber.LevelGenerator(); // winner of the 2010 PCG Mario AI Competition: makes multiple passes along the level, in each pass adding a new type of level item
 //        MarioLevelGenerator generator = new levelGenerators.linear.LevelGenerator();     // flat ground with holes, occasional pipes and monsters
 //        MarioLevelGenerator generator = new levelGenerators.sampler.LevelGenerator();  // creates levels by sampling parts of original levels
-        MarioLevelGenerator generator = new levelGenerators.random.LevelGenerator();   // places objects randomly
+        // MarioLevelGenerator generator = new levelGenerators.random.LevelGenerator();   // places objects randomly
+        MarioLevelGenerator generator = new levelGenerators.assignment02.LevelGenerator();   // places objects randomly
 
         /* todo choose level from generator or file */
         String level = generator.getGeneratedLevel(new MarioLevelModel(LEVEL_WIDTH, LEVEL_HEIGHT), new MarioTimer(5 * 60 * 60 * 1000));
@@ -94,7 +95,7 @@ public class GenerateLevel {
 
         /* todo choose agent to run (uncomment the one you want to use): */
 //        MarioAgent marioagent = new agents.human.Agent();            // Human agent - play by yourself: LEFT/RIGHT arrows to move, S to jump, A to shoot fireballs
-//        MarioAgent marioagent = new agents.robinBaumgarten.Agent();  // 46564.8 progress; 40/40 levels passed; A*
+    //    MarioAgent marioagent = new agents.robinBaumgarten.Agent();  // 46564.8 progress; 40/40 levels passed; A*
 //        MarioAgent marioagent = new agents.andySloane.Agent();       // 44735.5 progress; 38/40 levels passed; A*
 //        MarioAgent marioagent = new agents.trondEllingsen.Agent();   // 20599.2 progress; 11/40 levels passed; Rule-based
 //        MarioAgent marioagent = new agents.spencerSchumann.Agent();  // 17010.5 progress;  8/40 levels passed; Rule-based
@@ -104,12 +105,38 @@ public class GenerateLevel {
 //        MarioAgent marioagent = new agents.sergeyKarakovskiy.Agent();// max run and jump to the right
 //        MarioAgent marioagent = new agents.random.Agent();           // random agent (much higher probabilities to run/jump right)
 //        MarioAgent marioagent = new agents.doNothing.Agent();        // stays in place
-        MarioAgent marioagent = new agents.collector.Agent();        // A* with bonus for collecting coins;  from: https://github.com/obsidian-zero/Mario-AI-Framework
-//        MarioAgent marioagent = new agents.killer.Agent();           // A* with bonus for defeating enemies; from: https://github.com/obsidian-zero/Mario-AI-Framework
+        // MarioAgent marioagent = new agents.collector.Agent();        // A* with bonus for collecting coins;  from: https://github.com/obsidian-zero/Mario-AI-Framework
+    //    MarioAgent marioagent = new agents.killer.Agent();           // A* with bonus for defeating enemies; from: https://github.com/obsidian-zero/Mario-AI-Framework
 
-//        MarioResult runresult = game.runGame(marioagent, level, TIMER, 0, true);
-//        printResults(runresult);
+    //    MarioResult runresult = game.runGame(marioagent, level, TIMER, 0, true);
+    //    printResults(runresult);
 
-        runMultiple(generator, marioagent, 5, false);
+        // runMultiple(generator, marioagent, 10, true);
+
+        System.out.println("robinBaumgarten:");
+        runMultiple(generator, new agents.robinBaumgarten.Agent(), 100, false);
+
+        System.out.println("\ncollector:");
+        runMultiple(generator, new agents.collector.Agent(), 100, false);
+
+        System.out.println("\nkiller:");
+        runMultiple(generator, new agents.killer.Agent(), 100, false);
+
+
+        // latest result (100 runs):
+        // robinBaumgarten:
+        // Passed %:     100.0
+        // Avg. coins:   20.09
+        // Avg. enemies: 8.79
+
+        // collector:
+        // Passed %:     95.0
+        // Avg. coins:   44.63
+        // Avg. enemies: 10.51
+
+        // killer:
+        // Passed %:     96.0
+        // Avg. coins:   13.38
+        // Avg. enemies: 34.78
     }
 }
