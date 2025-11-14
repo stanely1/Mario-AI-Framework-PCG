@@ -1,9 +1,14 @@
-import engine.core.*;
-import engine.helper.GameStatus;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import engine.core.MarioAgent;
+import engine.core.MarioGame;
+import engine.core.MarioLevelGenerator;
+import engine.core.MarioLevelModel;
+import engine.core.MarioResult;
+import engine.core.MarioTimer;
+import engine.helper.GameStatus;
 
 public class GenerateLevel {
     public static int TIMER = 500;
@@ -108,9 +113,9 @@ public class GenerateLevel {
         // MarioAgent marioagent = new agents.collector.Agent();        // A* with bonus for collecting coins;  from: https://github.com/obsidian-zero/Mario-AI-Framework
 //        MarioAgent marioagent = new agents.killer.Agent();           // A* with bonus for defeating enemies; from: https://github.com/obsidian-zero/Mario-AI-Framework
 
-    //    MarioResult runresult = game.runGame(marioagent, level, TIMER, 0, true);
-    //    printResults(runresult);
+       MarioResult runresult = game.runGame(marioagent, level, TIMER, 0, true);
+       printResults(runresult);
 
-        runMultiple(generator, marioagent, 5, true);
+        // runMultiple(generator, marioagent, 5, true);
     }
 }

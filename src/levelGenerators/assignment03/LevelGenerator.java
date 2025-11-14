@@ -9,9 +9,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import engine.core.MarioAgent;
+import engine.core.MarioGame;
 import engine.core.MarioLevelGenerator;
 import engine.core.MarioLevelModel;
+import engine.core.MarioResult;
 import engine.core.MarioTimer;
+import engine.helper.GameStatus;
 
 public class LevelGenerator implements MarioLevelGenerator
 {
@@ -27,7 +31,6 @@ public class LevelGenerator implements MarioLevelGenerator
     private List<String> finishColumns = new ArrayList<>();
 
     // TODO:
-    // - mutation
     // - simulated annealing
     // - objective functions for each task
     // - parameter tuning: COLUMN_WIDTH
@@ -61,12 +64,25 @@ public class LevelGenerator implements MarioLevelGenerator
     @Override
     public String getGeneratedLevel(MarioLevelModel model, MarioTimer timer)
     {
-        var level = getRandomLevel();
+        var bestLevel = getRandomLevel();
+        double bestScore = evaluateLevel(bestLevel);
 
-        var mutated = mutateLevel(level);
-        for (int i = 0; i < LEVEL_ENCODING_LENGTH; i++) System.err.println(String.format("%d %d", level[i], mutated[i]));
+        // hill climbing - TODO: SA
+        int N = 10;
+        for (int i = 0; i < N; i++)
+        {
+            System.err.println(String.format("[iteration %d] best score: %f", i, bestScore));
+            var newLevel = mutateLevel(bestLevel);
+            double newScore = evaluateLevel(newLevel);
+            if (newScore > bestScore)
+            {
+                bestLevel = newLevel;
+                bestScore = newScore;
+            }
+        }
+        System.err.println(String.format("[iteration %d] best score: %f", N, bestScore));
 
-        return decodeLevel(level);
+        return decodeLevel(bestLevel);
     }
 
     @Override
@@ -98,6 +114,19 @@ public class LevelGenerator implements MarioLevelGenerator
             newLevel[idx] = random.nextInt(maxVal);
         }
         return newLevel;
+    }
+
+    private double evaluateLevel(final int[] level)
+    {
+        final MarioGame game = new MarioGame();
+        // final MarioAgent agent = new agents.robinBaumgarten.Agent();
+        final MarioAgent agent = new agents.killer.Agent();
+        final String levelString = decodeLevel(level);
+        // TODO: pick right value for timer
+        final int timer = 40;
+
+        MarioResult runResult = game.runGame(agent, levelString, timer);
+        return (runResult.getGameStatus() == GameStatus.WIN ? 150.0 : 0.0) + runResult.getKillsTotal(); // + runResult.getCurrentCoins();
     }
 
     private String decodeLevel(final int[] level)
