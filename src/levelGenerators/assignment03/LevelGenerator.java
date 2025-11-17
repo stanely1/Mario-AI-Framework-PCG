@@ -30,6 +30,11 @@ public class LevelGenerator implements MarioLevelGenerator
     private List<String> startColumns = new ArrayList<>();
     private List<String> finishColumns = new ArrayList<>();
 
+    private List<Double> valueHistory = new ArrayList<>();
+
+    private final String task;
+    private final int id;
+
     // TODO:
     // - simulated annealing
     // - objective functions for each task
@@ -37,8 +42,11 @@ public class LevelGenerator implements MarioLevelGenerator
     // - some different search/evolution?
     // - different approach to level encoding?
 
-    public LevelGenerator()
+    public LevelGenerator(final String task, final int id)
     {
+        this.task = task;
+        this.id = id;
+
         Path columnFilePath = Paths.get("data/columns.txt");
         try
         {
@@ -61,17 +69,25 @@ public class LevelGenerator implements MarioLevelGenerator
         // columns.forEach(System.out::println);
     }
 
+    public List<Double> getValueHistory()
+    {
+        return valueHistory;
+    }
+
     @Override
     public String getGeneratedLevel(MarioLevelModel model, MarioTimer timer)
     {
+        valueHistory.clear();
+
         var bestLevel = getRandomLevel();
         double bestScore = evaluateLevel(bestLevel);
 
         // hill climbing - TODO: SA
-        int N = 10;
+        int N = 100;
         for (int i = 0; i < N; i++)
         {
-            System.err.println(String.format("[iteration %d] best score: %f", i, bestScore));
+            System.err.println(String.format("[%d] iteration %d -> best score: %f", this.id, i, bestScore));
+            valueHistory.add(bestScore);
             var newLevel = mutateLevel(bestLevel);
             double newScore = evaluateLevel(newLevel);
             if (newScore > bestScore)
@@ -80,7 +96,8 @@ public class LevelGenerator implements MarioLevelGenerator
                 bestScore = newScore;
             }
         }
-        System.err.println(String.format("[iteration %d] best score: %f", N, bestScore));
+        System.err.println(String.format("[%d] iteration %d -> best score: %f", this.id, N, bestScore));
+        valueHistory.add(bestScore);
 
         return decodeLevel(bestLevel);
     }
@@ -118,15 +135,21 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private double evaluateLevel(final int[] level)
     {
+        if (this.task.equals("killer")) return evaluateLevelForKillerTask(level);
+
+        return random.nextDouble();
+    }
+
+    private double evaluateLevelForKillerTask(final int[] level)
+    {
         final MarioGame game = new MarioGame();
-        // final MarioAgent agent = new agents.robinBaumgarten.Agent();
         final MarioAgent agent = new agents.killer.Agent();
         final String levelString = decodeLevel(level);
         // TODO: pick right value for timer
-        final int timer = 40;
+        final int timer = 30;
 
-        MarioResult runResult = game.runGame(agent, levelString, timer);
-        return (runResult.getGameStatus() == GameStatus.WIN ? 150.0 : 0.0) + runResult.getKillsTotal(); // + runResult.getCurrentCoins();
+        MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
+        return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
     }
 
     private String decodeLevel(final int[] level)
