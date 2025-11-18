@@ -7,7 +7,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import engine.core.MarioAgent;
 import engine.core.MarioGame;
@@ -34,6 +38,9 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private final String task;
     private final int id;
+
+    private static final char[] enemyChars = MarioLevelModel.getEnemyCharacters();
+    private static final Set<Integer> enemyCharList = IntStream.range(0, enemyChars.length).map(i -> enemyChars[i]).boxed().collect(Collectors.toSet());
 
     // TODO:
     // - simulated annealing
@@ -142,14 +149,65 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private double evaluateLevelForKillerTask(final int[] level)
     {
-        final MarioGame game = new MarioGame();
-        final MarioAgent agent = new agents.killer.Agent();
-        final String levelString = decodeLevel(level);
-        // TODO: pick right value for timer
-        final int timer = 30;
+        // final MarioGame game = new MarioGame();
+        // final MarioAgent agent = new agents.killer.Agent();
+        // final String levelString = decodeLevel(level);
+        // // TODO: pick right value for timer
+        // final int timer = 30;
 
-        MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
-        return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
+        // MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
+        // return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
+
+        return (isPassable(level) ? 200.0 : 0.0) + countEnemies(level);
+    }
+
+    private boolean isPassable(final int[] level)
+    {
+        final String[] lines = decodeLevel(level).split("\n");
+
+        int[][] dist = new int[lines.length][lines[0].length()];
+        for (var row : dist) {
+            Arrays.fill(row, Integer.MAX_VALUE);
+        }
+
+        PriorityQueue<int[]> Q = new PriorityQueue<>((a, b) -> Integer.compare(a[2], b[2]));
+
+        for (int i = 0; i < lines.length; i++)
+        {
+            final int marioPos = lines[i].indexOf('M');
+            if (marioPos != -1) {
+                var entry = new int[]{i, marioPos, aStarHeuristic(i, marioPos)};
+                dist[entry[0]][entry[1]] = 0;
+                Q.add(entry);
+            }
+        }
+
+        while (!Q.isEmpty())
+        {
+            // TODO: A*
+            var entry = Q.poll();
+
+            // TODO: iterate over possible moves, add them to queue, if 'F' found -> return
+        }
+
+        return false;
+    }
+
+    private int aStarHeuristic(final int i, final int j)
+    {
+        return LEVEL_WIDTH - j;
+    }
+
+    private long countEnemies(final int[] level)
+    {
+        final String levelString = decodeLevel(level);
+        return levelString.chars().filter(c -> enemyCharList.contains(c)).count();
+    }
+
+    private long countCoins(final int[] level)
+    {
+        final String levelString = decodeLevel(level);
+        return levelString.chars().filter(c -> c == MarioLevelModel.COIN).count();
     }
 
     private String decodeLevel(final int[] level)

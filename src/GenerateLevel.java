@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -53,20 +54,28 @@ public class GenerateLevel {
     }
 
     public static void main(String[] args) {
-        final String task = "killer";
+        if (args.length == 0) {
+            System.err.println("Missing arguments: <task> {killer}, [optional] gen");
+            System.exit(1);
+        }
+
+        final String task = args[0];
         final int numLevels = 10;
 
         /****************** generate levels ******************/
-        ExecutorService executor = Executors.newFixedThreadPool(numLevels);
+        if (args.length >= 2 && args[1].equals("gen"))
+        {
+            ExecutorService executor = Executors.newFixedThreadPool(numLevels);
+            CompletableFuture<?>[] futures = new CompletableFuture<?>[numLevels];
 
-        for (int i = 0; i < numLevels; i++) {
-            final int id = i;
-            executor.submit(() -> {
-                evolution(task, id);
-            });
+            for (int i = 0; i < numLevels; i++) {
+                final int id = i;
+                futures[i] = CompletableFuture.runAsync(() -> evolution(task, id), executor);
+            }
+
+            CompletableFuture.allOf(futures).join();
+            executor.shutdown();
         }
-
-        executor.shutdown();
 
         /****************** run agents **********************/
         // MarioAgent agent = new agents.robinBaumgarten.Agent();
