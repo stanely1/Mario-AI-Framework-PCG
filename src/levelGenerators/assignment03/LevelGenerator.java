@@ -13,13 +13,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import engine.core.MarioAgent;
-import engine.core.MarioGame;
 import engine.core.MarioLevelGenerator;
 import engine.core.MarioLevelModel;
-import engine.core.MarioResult;
 import engine.core.MarioTimer;
-import engine.helper.GameStatus;
 
 public class LevelGenerator implements MarioLevelGenerator
 {
@@ -28,6 +24,7 @@ public class LevelGenerator implements MarioLevelGenerator
     private static final int COLUMN_WIDTH = 5;
     private static final int LEVEL_ENCODING_LENGTH = LEVEL_WIDTH / COLUMN_WIDTH;
     private static final int MUTATION_CHANGED_POS_COUNT = 1;
+    private static final double WIN_SCORE = 1000.0;
 
     private final Random random = new Random();
     private List<String> columns = new ArrayList<>();
@@ -39,8 +36,8 @@ public class LevelGenerator implements MarioLevelGenerator
     private final String task;
     private final int id;
 
-    private static final char[] enemyChars = MarioLevelModel.getEnemyCharacters();
-    private static final Set<Integer> enemyCharList = IntStream.range(0, enemyChars.length).map(i -> enemyChars[i]).boxed().collect(Collectors.toSet());
+    private static final Set<Integer> enemyChars = charArrayToSet(MarioLevelModel.getEnemyCharacters());
+    private static final Set<Integer> nonBlockingChars = charArrayToSet(MarioLevelModel.getNonBlockingTiles());
 
     // TODO:
     // - simulated annealing
@@ -90,7 +87,7 @@ public class LevelGenerator implements MarioLevelGenerator
         double bestScore = evaluateLevel(bestLevel);
 
         // hill climbing - TODO: SA
-        int N = 100;
+        int N = 1000;
         for (int i = 0; i < N; i++)
         {
             System.err.println(String.format("[%d] iteration %d -> best score: %f", this.id, i, bestScore));
@@ -158,7 +155,7 @@ public class LevelGenerator implements MarioLevelGenerator
         // MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
         // return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
 
-        return (isPassable(level) ? 200.0 : 0.0) + countEnemies(level);
+        return (isPassable(level) ? WIN_SCORE : 0.0) + countEnemies(level);
     }
 
     private boolean isPassable(final int[] level)
@@ -184,10 +181,51 @@ public class LevelGenerator implements MarioLevelGenerator
 
         while (!Q.isEmpty())
         {
-            // TODO: A*
             var entry = Q.poll();
+            int i = entry[0], j = entry[1];
 
-            // TODO: iterate over possible moves, add them to queue, if 'F' found -> return
+            // generate list of possible moves
+            List<int[]> moves = new ArrayList<>();
+
+            // on ground - can jump
+            if (isInBounds(i + 1, j) && !nonBlockingChars.contains((int)lines[i + 1].charAt(j))) {
+                if (isInBounds(i, j + 1) && nonBlockingChars.contains((int)lines[i].charAt(j + 1))) {
+                    moves.add(new int[]{i, j + 1});
+                }
+                for (int di = 1; di <= 3; di++) {
+                    int addedMoves = 0;
+                    for (int dj = 0; dj <= di; dj++) {
+                        int ni = i - di, nj = j + dj;
+                        if (isInBounds(ni, nj) && nonBlockingChars.contains((int)lines[ni].charAt(nj))) {
+                            moves.add(new int[]{ni, nj});
+                            addedMoves++;
+                        } else break;
+                    }
+                    if (addedMoves == 0) break;
+                }
+            } else { // in air - can only fall down
+                if (isInBounds(i + 1, j)) {
+                    moves.add(new int[]{i + 1, j});
+                }
+                if (isInBounds(i + 1, j + 1) && nonBlockingChars.contains((int)lines[i + 1].charAt(j + 1))) {
+                    moves.add(new int[]{i + 1, j + 1});
+                }
+            }
+
+            // iterate over possible moves, add them to queue, if 'F' found -> return
+            for (var move : moves) {
+                int mi = move[0], mj = move[1];
+
+                if (lines[mi].charAt(mj) == MarioLevelModel.MARIO_EXIT) return true;
+
+                int distChange = Math.abs(mi - i) + Math.abs(mj - j);
+                int newDist = dist[i][j] + distChange;
+                if (newDist < dist[mi][mj]) {
+                    var newEntry = new int[]{mi, mj, newDist + aStarHeuristic(mi, mj)};
+                    dist[mi][mj] = newDist;
+                    Q.add(newEntry);
+                }
+            }
         }
 
         return false;
@@ -198,10 +236,15 @@ public class LevelGenerator implements MarioLevelGenerator
         return LEVEL_WIDTH - j;
     }
 
+    private boolean isInBounds(final int i, final int j)
+    {
+        return 0 <= i && i < LEVEL_HEIGHT && 0 <= j && j < LEVEL_WIDTH;
+    }
+
     private long countEnemies(final int[] level)
     {
         final String levelString = decodeLevel(level);
-        return levelString.chars().filter(c -> enemyCharList.contains(c)).count();
+        return levelString.chars().filter(c -> enemyChars.contains(c)).count();
     }
 
     private long countCoins(final int[] level)
@@ -231,5 +274,10 @@ public class LevelGenerator implements MarioLevelGenerator
         }
 
         return String.join("\n", result);
+    }
+
+    private static Set<Integer> charArrayToSet(final char[] chars)
+    {
+        return IntStream.range(0, chars.length).map(i -> chars[i]).boxed().collect(Collectors.toSet());
     }
 }

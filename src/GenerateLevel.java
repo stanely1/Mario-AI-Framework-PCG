@@ -13,7 +13,7 @@ import engine.core.MarioTimer;
 import engine.helper.GameStatus;
 
 public class GenerateLevel {
-    public static int TIMER = 60;
+    public static int TIMER = 30;
     public static int LEVEL_WIDTH = 150;
     public static int LEVEL_HEIGHT = 16;
 

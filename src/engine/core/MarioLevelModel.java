@@ -81,7 +81,7 @@ public class MarioLevelModel {
      * @return list of all non blocking tiles
      */
     public static char[] getNonBlockingTiles() {
-        return new char[]{COIN, COIN_HIDDEN_BLOCK, LIFE_HIDDEN_BLOCK, PLATFORM_BACKGROUND};
+        return new char[]{COIN, COIN_HIDDEN_BLOCK, LIFE_HIDDEN_BLOCK, PLATFORM_BACKGROUND, MARIO_START, MARIO_EXIT, EMPTY};
     }
 
     /**
