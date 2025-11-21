@@ -55,7 +55,7 @@ public class GenerateLevel {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.err.println("Missing arguments: <task> {killer}, [optional] gen");
+            System.err.println("Missing arguments: <task> {robin|killer}, [optional] gen");
             System.exit(1);
         }
 

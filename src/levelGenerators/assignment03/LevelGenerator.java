@@ -139,9 +139,15 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private double evaluateLevel(final int[] level)
     {
+        if (this.task.equals("robin")) return evaluateLevelForRobinTask(level);
         if (this.task.equals("killer")) return evaluateLevelForKillerTask(level);
 
         return random.nextDouble();
+    }
+
+    private double evaluateLevelForRobinTask(final int[] level)
+    {
+        return (isPassable(level) ? WIN_SCORE : 0.0) + 3.0 * countEnemies(level) + countCoins(level);
     }
 
     private double evaluateLevelForKillerTask(final int[] level)
