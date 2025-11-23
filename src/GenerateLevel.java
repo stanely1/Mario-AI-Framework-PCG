@@ -154,19 +154,19 @@ public class GenerateLevel {
 
 
         // Task: robin, agent: RobinBaumgartenAgent
-        // [level 0] passed: true, coins: 19, kills: 14
-        // [level 1] passed: true, coins: 26, kills: 14
-        // [level 2] passed: true, coins: 12, kills: 12
-        // [level 3] passed: true, coins: 22, kills: 10
-        // [level 4] passed: true, coins: 12, kills: 15
-        // [level 5] passed: true, coins: 13, kills: 17
-        // [level 6] passed: true, coins: 31, kills: 13
-        // [level 7] passed: true, coins: 19, kills: 13
-        // [level 8] passed: true, coins: 10, kills: 14
-        // [level 9] passed: true, coins: 17, kills: 18
+        // [level 0] passed: true, coins: 20, kills: 11
+        // [level 1] passed: true, coins: 13, kills: 13
+        // [level 2] passed: true, coins: 9, kills: 15
+        // [level 3] passed: true, coins: 14, kills: 15
+        // [level 4] passed: true, coins: 11, kills: 16
+        // [level 5] passed: true, coins: 14, kills: 11
+        // [level 6] passed: true, coins: 19, kills: 10
+        // [level 7] passed: true, coins: 22, kills: 14
+        // [level 8] passed: true, coins: 10, kills: 21
+        // [level 9] passed: true, coins: 15, kills: 17
 
         // Passed %:     100.0
-        // Avg. coins:   18.1
-        // Avg. enemies: 14.0
+        // Avg. coins:   14.7
+        // Avg. enemies: 14.3
     }
 }

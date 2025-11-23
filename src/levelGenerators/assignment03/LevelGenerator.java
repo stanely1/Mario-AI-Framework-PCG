@@ -179,7 +179,10 @@ public class LevelGenerator implements MarioLevelGenerator
     private double evaluateLevelForRobinTask(final int[] level)
     {
         // TODO: check some other elements?
-        return commonEval(level) + 3.0 * countEnemies(level) + countCoins(level);
+        return commonEval(level)
+             + 3.0 * countEnemies(level)
+             + countCoins(level)
+             + 0.4 * countPlantPipes(level);
     }
 
     private double evaluateLevelForKillerTask(final int[] level)
@@ -304,6 +307,12 @@ public class LevelGenerator implements MarioLevelGenerator
     {
         final String levelString = decodeLevel(level);
         return levelString.chars().filter(c -> c == MarioLevelModel.COIN).count();
+    }
+
+    private long countPlantPipes(final int[] level)
+    {
+        final String levelString = decodeLevel(level);
+        return levelString.chars().filter(c -> c == MarioLevelModel.PIPE_FLOWER).count();
     }
 
     private long countColumnOrigins(final int[] level)
