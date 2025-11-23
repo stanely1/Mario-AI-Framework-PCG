@@ -43,9 +43,6 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private Integer notPassableColumnIdx = null;
 
-    // TODO:
-    // - postprocessing: fix broken pipes, add coins (?)
-
     public LevelGenerator(final String task, final int id)
     {
         this.task = task;

@@ -134,5 +134,39 @@ public class GenerateLevel {
         System.out.println("Passed %:     " + 100.0*passed/numLevels);
         System.out.println("Avg. coins:   " + (double)coins/numLevels);
         System.out.println("Avg. enemies: " + (double)kills/numLevels);
+
+        // Results:
+        // Task: killer, agent: Killer
+        // [level 0] passed: true, coins: 11, kills: 59
+        // [level 1] passed: true, coins: 8, kills: 43
+        // [level 2] passed: true, coins: 11, kills: 50
+        // [level 3] passed: true, coins: 8, kills: 47
+        // [level 4] passed: true, coins: 14, kills: 47
+        // [level 5] passed: true, coins: 6, kills: 44
+        // [level 6] passed: true, coins: 16, kills: 61
+        // [level 7] passed: true, coins: 3, kills: 43
+        // [level 8] passed: true, coins: 19, kills: 50
+        // [level 9] passed: true, coins: 10, kills: 44
+
+        // Passed %:     100.0
+        // Avg. coins:   10.6
+        // Avg. enemies: 48.8
+
+
+        // Task: robin, agent: RobinBaumgartenAgent
+        // [level 0] passed: true, coins: 19, kills: 14
+        // [level 1] passed: true, coins: 26, kills: 14
+        // [level 2] passed: true, coins: 12, kills: 12
+        // [level 3] passed: true, coins: 22, kills: 10
+        // [level 4] passed: true, coins: 12, kills: 15
+        // [level 5] passed: true, coins: 13, kills: 17
+        // [level 6] passed: true, coins: 31, kills: 13
+        // [level 7] passed: true, coins: 19, kills: 13
+        // [level 8] passed: true, coins: 10, kills: 14
+        // [level 9] passed: true, coins: 17, kills: 18
+
+        // Passed %:     100.0
+        // Avg. coins:   18.1
+        // Avg. enemies: 14.0
     }
 }
