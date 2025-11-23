@@ -181,7 +181,8 @@ public class LevelGenerator implements MarioLevelGenerator
 
     private double evaluateLevelForRobinTask(final int[] level)
     {
-        return (isPassable(level) ? WIN_SCORE : 0.0) + 3.0 * countEnemies(level) + countCoins(level);
+        // TODO: check some other elements?
+        return commonEval(level) + 3.0 * countEnemies(level) + countCoins(level);
     }
 
     private double evaluateLevelForKillerTask(final int[] level)
@@ -195,10 +196,15 @@ public class LevelGenerator implements MarioLevelGenerator
         // MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
         // return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
 
+        return commonEval(level) + 3.0 * countEnemies(level);
+    }
+
+    private double commonEval(final int[] level)
+    {
+        // Bonus for passability and diversity (columns from different origins)
         return (isPassable(level) ? WIN_SCORE : 0.0)
              + 100.0 * countColumnOrigins(level)
-             + 7.0 * leastCommonColumnOriginCount(level)
-             + 3.0 * countEnemies(level);
+             + 7.0 * leastCommonColumnOriginCount(level);
     }
 
     private boolean isPassable(final int[] level)
