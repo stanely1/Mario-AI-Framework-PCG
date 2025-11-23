@@ -27,9 +27,11 @@ public class LevelGenerator implements MarioLevelGenerator
     private static final double WIN_SCORE = 1000.0;
 
     private final Random random = new Random();
-    private List<String> columns = new ArrayList<>();
-    private List<String> startColumns = new ArrayList<>();
-    private List<String> finishColumns = new ArrayList<>();
+
+    private record Column(String value, String origin) {};
+    private List<Column> columns = new ArrayList<>();
+    private List<Column> startColumns = new ArrayList<>();
+    private List<Column> finishColumns = new ArrayList<>();
 
     private List<Double> valueHistory = new ArrayList<>();
 
@@ -39,12 +41,10 @@ public class LevelGenerator implements MarioLevelGenerator
     private static final Set<Integer> enemyChars = charArrayToSet(MarioLevelModel.getEnemyCharacters());
     private static final Set<Integer> nonBlockingChars = charArrayToSet(MarioLevelModel.getNonBlockingTiles());
 
+    private Integer notPassableColumnIdx = null;
+
     // TODO:
-    // - simulated annealing
-    // - objective functions for each task
-    // - parameter tuning: COLUMN_WIDTH
-    // - some different search/evolution?
-    // - different approach to level encoding?
+    // - how to increase diversity of generated levels ?
 
     public LevelGenerator(final String task, final int id)
     {
@@ -54,10 +54,15 @@ public class LevelGenerator implements MarioLevelGenerator
         Path columnFilePath = Paths.get("data/columns.txt");
         try
         {
-            for (String col : Files.readAllLines(columnFilePath))
+            for (String colString : Files.readAllLines(columnFilePath))
             {
-                if (col.indexOf('M') != -1) this.startColumns.add(col);
-                else if (col.indexOf('F') != -1) this.finishColumns.add(col);
+                final var colSplit = colString.split(" ");
+                final String colValue = colSplit[0];
+                final String colOrigin = colSplit[1];
+                final Column col = new Column(colValue, colOrigin);
+
+                if (colValue.indexOf('M') != -1) this.startColumns.add(col);
+                else if (colValue.indexOf('F') != -1) this.finishColumns.add(col);
                 else this.columns.add(col);
             }
         }
@@ -65,9 +70,9 @@ public class LevelGenerator implements MarioLevelGenerator
         {
             System.err.println("Failed to read a file: " + columnFilePath);
 
-            this.startColumns  = List.of("-------------MXX" + "--------------XX".repeat(COLUMN_WIDTH - 1));
-            this.finishColumns = List.of("--------------XX".repeat(COLUMN_WIDTH - 1) + "-------------FXX");
-            this.columns       = List.of("--------------XX".repeat(COLUMN_WIDTH));
+            this.startColumns  = List.of(new Column("-------------MXX" + "--------------XX".repeat(COLUMN_WIDTH - 1), "Default"));
+            this.finishColumns = List.of(new Column("--------------XX".repeat(COLUMN_WIDTH - 1) + "-------------FXX", "Default"));
+            this.columns       = List.of(new Column("--------------XX".repeat(COLUMN_WIDTH), "Default"));
         }
 
         // columns.forEach(System.out::println);
@@ -86,16 +91,32 @@ public class LevelGenerator implements MarioLevelGenerator
         var bestLevel = getRandomLevel();
         double bestScore = evaluateLevel(bestLevel);
 
+        var currentLevel = bestLevel;
+        double currentScore = bestScore;
+        int noScoreChange = 0;
+
         // hill climbing - TODO: SA
-        int N = 1000;
+        int N = 100000;
         for (int i = 0; i < N; i++)
         {
             System.err.println(String.format("[%d] iteration %d -> best score: %f", this.id, i, bestScore));
             valueHistory.add(bestScore);
-            var newLevel = mutateLevel(bestLevel);
+
+            var newLevel = mutateLevel(currentLevel);
             double newScore = evaluateLevel(newLevel);
-            if (newScore > bestScore)
-            {
+            if (newScore > currentScore) {
+                currentLevel = newLevel;
+                currentScore = newScore;
+            } else {
+                // if no change for long time, perform random restart
+                noScoreChange++;
+                if (noScoreChange >= 500) {
+                    currentLevel = getRandomLevel();
+                    currentScore = evaluateLevel(currentLevel);
+                    noScoreChange = 0;
+                }
+            }
+            if (newScore > bestScore) {
                 bestLevel = newLevel;
                 bestScore = newScore;
             }
@@ -124,6 +145,19 @@ public class LevelGenerator implements MarioLevelGenerator
     private int[] mutateLevel(final int[] level)
     {
         int[] newLevel = level.clone();
+
+        // if level not passable, mutate the column that is not passable
+        if (notPassableColumnIdx != null)
+        {
+            final int maxVal = switch (notPassableColumnIdx) {
+                case 0 -> startColumns.size();
+                case LEVEL_ENCODING_LENGTH - 1 -> finishColumns.size();
+                default -> columns.size();
+            };
+            newLevel[notPassableColumnIdx] = random.nextInt(maxVal);
+        }
+
+        // mutate K columns
         for (int i = 0; i < MUTATION_CHANGED_POS_COUNT; i++)
         {
             final int idx = random.nextInt(LEVEL_ENCODING_LENGTH);
@@ -161,7 +195,10 @@ public class LevelGenerator implements MarioLevelGenerator
         // MarioResult runResult = game.runGame(agent, levelString, timer, 0, false);
         // return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
 
-        return (isPassable(level) ? WIN_SCORE : 0.0) + countEnemies(level);
+        return (isPassable(level) ? WIN_SCORE : 0.0)
+             + 100.0 * countColumnOrigins(level)
+             + 7.0 * leastCommonColumnOriginCount(level)
+             + countEnemies(level);
     }
 
     private boolean isPassable(final int[] level)
@@ -185,10 +222,12 @@ public class LevelGenerator implements MarioLevelGenerator
             }
         }
 
+        int maxJ = 0;
         while (!Q.isEmpty())
         {
             var entry = Q.poll();
             int i = entry[0], j = entry[1];
+            maxJ = Integer.max(maxJ, j);
 
             // generate list of possible moves
             List<int[]> moves = new ArrayList<>();
@@ -222,7 +261,11 @@ public class LevelGenerator implements MarioLevelGenerator
             for (var move : moves) {
                 int mi = move[0], mj = move[1];
 
-                if (lines[mi].charAt(mj) == MarioLevelModel.MARIO_EXIT) return true;
+                if (lines[mi].charAt(mj) == MarioLevelModel.MARIO_EXIT)
+                {
+                    notPassableColumnIdx = null;
+                    return true;
+                }
 
                 int distChange = Math.abs(mi - i) + Math.abs(mj - j);
                 int newDist = dist[i][j] + distChange;
@@ -234,6 +277,7 @@ public class LevelGenerator implements MarioLevelGenerator
             }
         }
 
+        notPassableColumnIdx = maxJ / COLUMN_WIDTH;
         return false;
     }
 
@@ -259,6 +303,34 @@ public class LevelGenerator implements MarioLevelGenerator
         return levelString.chars().filter(c -> c == MarioLevelModel.COIN).count();
     }
 
+    private long countColumnOrigins(final int[] level)
+    {
+        return Arrays.stream(level)
+            .mapToObj(i -> switch (i) {
+                case 0 -> startColumns.get(i).origin();
+                case LEVEL_ENCODING_LENGTH - 1 -> finishColumns.get(i).origin();
+                default -> columns.get(i).origin();
+            })
+            .distinct()
+            .count();
+    }
+
+    private long leastCommonColumnOriginCount(final int[] level)
+    {
+        final var counts = Arrays.stream(level)
+            .mapToObj(i -> switch (i) {
+                case 0 -> startColumns.get(i).origin();
+                case LEVEL_ENCODING_LENGTH - 1 -> finishColumns.get(i).origin();
+                default -> columns.get(i).origin();
+            })
+            .collect(Collectors.groupingBy(origin -> origin, Collectors.counting()));
+
+        return counts.values().stream()
+            .mapToLong(Long::longValue)
+            .min()
+            .orElse(0);
+    }
+
     private String decodeLevel(final int[] level)
     {
         String[] result = new String[LEVEL_HEIGHT];
@@ -267,9 +339,9 @@ public class LevelGenerator implements MarioLevelGenerator
         for (int i = 0; i < LEVEL_ENCODING_LENGTH; i++)
         {
             final String col = switch (i) {
-                case 0 -> startColumns.get(level[i]);
-                case LEVEL_ENCODING_LENGTH - 1 -> finishColumns.get(level[i]);
-                default -> columns.get(level[i]);
+                case 0 -> startColumns.get(level[i]).value();
+                case LEVEL_ENCODING_LENGTH - 1 -> finishColumns.get(level[i]).value();
+                default -> columns.get(level[i]).value();
             };
 
             for (int j = 0; j < LEVEL_HEIGHT; j++)

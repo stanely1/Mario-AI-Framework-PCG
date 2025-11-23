@@ -62,6 +62,8 @@ public class GenerateLevel {
         final String task = args[0];
         final int numLevels = 10;
 
+        // var generator = new levelGenerators.assignment03.LevelGenerator(task, 0);
+
         /****************** generate levels ******************/
         if (args.length >= 2 && args[1].equals("gen"))
         {
