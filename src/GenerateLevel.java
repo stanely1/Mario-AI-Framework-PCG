@@ -13,7 +13,7 @@ import engine.core.MarioTimer;
 import engine.helper.GameStatus;
 
 public class GenerateLevel {
-    public static int TIMER = 30;
+    public static int TIMER = 45;
     public static int LEVEL_WIDTH = 150;
     public static int LEVEL_HEIGHT = 16;
 
@@ -40,13 +40,34 @@ public class GenerateLevel {
     public static void evolution(final String task, final int id)
     {
         var generator = new levelGenerators.assignment03.LevelGenerator(task, id);
-        var level = generator.getGeneratedLevel(new MarioLevelModel(LEVEL_WIDTH, LEVEL_HEIGHT), new MarioTimer(5 * 60 * 60 * 1000));
-        var values = generator.getValueHistory();
-        var valuesString = String.join(" ", values.stream().map(String::valueOf).toList());
-        var dirname = generator.getGeneratorName() + "/" + task;
 
+        MarioGame game = new MarioGame();
+        MarioAgent agent = switch (task) {
+            case "killer" -> new agents.killer.Agent();
+            case "robin"  -> new agents.robinBaumgarten.Agent();
+            default       -> new agents.robinBaumgarten.Agent();
+        };
+        String level;
+        boolean passed;
+
+        do {
+            level = generator.getGeneratedLevel(new MarioLevelModel(LEVEL_WIDTH, LEVEL_HEIGHT), new MarioTimer(5 * 60 * 60 * 1000));
+            passed = true;
+            // need to pass 10 games to be accepted - agent should be deterministic but it seems it's not (why?)
+            for (int i = 0; i < 10; i++) {
+                MarioResult result = game.runGame(agent, level, TIMER, 0, false);
+                if (result.getGameStatus() != GameStatus.WIN) {
+                    passed = false;
+                    break;
+                }
+            }
+        } while (!passed);
+
+        String dirname = generator.getGeneratorName() + "/" + task;
         writeLevel(dirname, id, level);
         try {
+            var values = generator.getValueHistory();
+            var valuesString = String.join(" ", values.stream().map(String::valueOf).toList());
             Files.write(Paths.get("levels/" + dirname + "/lvl-" + id + "-values.txt"), valuesString.getBytes());
         } catch (IOException e) {
             System.out.println("Failed to write level values to file: " + e.getMessage());
@@ -82,7 +103,12 @@ public class GenerateLevel {
         /****************** run agents **********************/
         // MarioAgent agent = new agents.robinBaumgarten.Agent();
         // MarioAgent agent = new agents.collector.Agent();
-        MarioAgent agent = new agents.killer.Agent();
+        // MarioAgent agent = new agents.killer.Agent();
+        MarioAgent agent = switch (task) {
+            case "killer" -> new agents.killer.Agent();
+            case "robin"  -> new agents.robinBaumgarten.Agent();
+            default       -> new agents.robinBaumgarten.Agent();
+        };
 
         System.out.println(String.format("Task: %s, agent: %s", task, agent.getAgentName()));
 

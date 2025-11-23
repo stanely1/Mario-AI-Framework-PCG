@@ -44,7 +44,7 @@ public class LevelGenerator implements MarioLevelGenerator
     private Integer notPassableColumnIdx = null;
 
     // TODO:
-    // - how to increase diversity of generated levels ?
+    // - postprocessing: fix broken pipes, add coins (?)
 
     public LevelGenerator(final String task, final int id)
     {
@@ -96,7 +96,7 @@ public class LevelGenerator implements MarioLevelGenerator
         int noScoreChange = 0;
 
         // hill climbing - TODO: SA
-        int N = 100000;
+        int N = 30000;
         for (int i = 0; i < N; i++)
         {
             System.err.println(String.format("[%d] iteration %d -> best score: %f", this.id, i, bestScore));
@@ -110,7 +110,7 @@ public class LevelGenerator implements MarioLevelGenerator
             } else {
                 // if no change for long time, perform random restart
                 noScoreChange++;
-                if (noScoreChange >= 500) {
+                if (noScoreChange >= 400) {
                     currentLevel = getRandomLevel();
                     currentScore = evaluateLevel(currentLevel);
                     noScoreChange = 0;
@@ -198,7 +198,7 @@ public class LevelGenerator implements MarioLevelGenerator
         return (isPassable(level) ? WIN_SCORE : 0.0)
              + 100.0 * countColumnOrigins(level)
              + 7.0 * leastCommonColumnOriginCount(level)
-             + countEnemies(level);
+             + 3.0 * countEnemies(level);
     }
 
     private boolean isPassable(final int[] level)
