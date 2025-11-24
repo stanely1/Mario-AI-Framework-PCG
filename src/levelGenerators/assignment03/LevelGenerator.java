@@ -172,6 +172,7 @@ public class LevelGenerator implements MarioLevelGenerator
     {
         if (this.task.equals("robin")) return evaluateLevelForRobinTask(level);
         if (this.task.equals("killer")) return evaluateLevelForKillerTask(level);
+        if (this.task.equals("collector")) return evaluateLevelForCollectorTask(level);
 
         return random.nextDouble();
     }
@@ -197,6 +198,13 @@ public class LevelGenerator implements MarioLevelGenerator
         // return (runResult.getGameStatus() == GameStatus.WIN ? 200.0 : 0.0) + runResult.getKillsTotal();
 
         return commonEval(level) + 3.0 * countEnemies(level);
+    }
+
+    private double evaluateLevelForCollectorTask(final int[] level)
+    {
+        return commonEval(level)
+             + 3.0 * countEnemies(level)
+             + 3.0 * countCoins(level);
     }
 
     private double commonEval(final int[] level)
